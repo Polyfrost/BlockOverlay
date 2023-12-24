@@ -2,6 +2,7 @@ package org.polyfrost.blockoverlay.render
 
 import cc.polyfrost.oneconfig.utils.dsl.mc
 import net.minecraft.block.Block
+import net.minecraft.block.BlockBush
 import net.minecraft.block.material.Material
 import net.minecraft.client.renderer.Tessellator
 import net.minecraft.client.renderer.texture.TextureMap
@@ -19,13 +20,6 @@ import net.minecraft.client.renderer.GlStateManager as GL
 
 object Overlay {
     private const val PADDING = 0.002
-    private val plants: List<Block> = listOf(
-        Blocks.deadbush,
-        Blocks.double_plant,
-        Blocks.red_flower,
-        Blocks.tallgrass,
-        Blocks.yellow_flower
-    )
 
     @SubscribeEvent
     fun onRenderBlockOverlay(event: DrawBlockHighlightEvent) {
@@ -52,7 +46,7 @@ object Overlay {
         if (ModConfig.mode != 2 && ModConfig.mode != 3) return
         val entity = mc.renderViewEntity ?: return
         if (mc.gameSettings.hideGUI) return
-        val block = focusedBlock ?: return
+        val block = getFocusedBlock() ?: return
         val isAdventure = mc.playerController.currentGameType.isAdventure
         if (isAdventure && !ModConfig.persistent && !canRenderBlockOverlay()) return
         renderBlockOverlay(block, entity, event.partialTicks)
@@ -66,10 +60,10 @@ object Overlay {
         val entityZ = lerp(entity.lastTickPosZ, entity.posZ, partialTicks)
         val thickness = ModConfig.lineWidth
         val outline = ModConfig.outlineColor
-        val mouseOver: MovingObjectPosition = mc.objectMouseOver
+        val mouseOver = mc.objectMouseOver
         val blockPos = mouseOver.blockPos
         val boundingBox = block.getSelectedBoundingBox(mc.theWorld, blockPos).expand(PADDING, PADDING, PADDING)
-        val side = mouseOver.sideHit.takeIf{ ModConfig.mode == 2 }
+        val side = mouseOver.sideHit
         GL11.glPushMatrix()
         GL.disableAlpha()
         GL.enableBlend()
@@ -92,19 +86,18 @@ object Overlay {
         renderBlockBreakOverlay(entity, partialTicks)
     }
 
-    private val focusedBlock: Block?
-        get() {
-            val mouseOver = mc.objectMouseOver ?: return null
-            if (mouseOver.typeOfHit != MovingObjectPosition.MovingObjectType.BLOCK) return null
-            val blockPos = mouseOver.blockPos
-            if (!mc.theWorld.worldBorder.contains(blockPos)) return null
-            val block = mc.theWorld.getBlockState(blockPos).block ?: return null
-            if (block.material === Material.air) return null
-            if (ModConfig.hidePlants && block in plants) return null
-            if (!ModConfig.barriers && block === Blocks.barrier) return null
-            block.setBlockBoundsBasedOnState(mc.theWorld, blockPos)
-            return block
-        }
+    private fun getFocusedBlock(): Block? {
+        val mouseOver = mc.objectMouseOver ?: return null
+        if (mouseOver.typeOfHit != MovingObjectPosition.MovingObjectType.BLOCK) return null
+        val blockPos = mouseOver.blockPos
+        if (!mc.theWorld.worldBorder.contains(blockPos)) return null
+        val block = mc.theWorld.getBlockState(blockPos).block ?: return null
+        if (block.material === Material.air) return null
+        if (ModConfig.hidePlants && block is BlockBush) return null
+        if (!ModConfig.barriers && block === Blocks.barrier) return null
+        block.setBlockBoundsBasedOnState(mc.theWorld, blockPos)
+        return block
+    }
 
     private fun canRenderBlockOverlay(): Boolean {
         val entity = mc.renderViewEntity
@@ -116,10 +109,11 @@ object Overlay {
         val blockPos = hovering.blockPos
         val blockState = mc.theWorld.getBlockState(blockPos)
         val block = blockState.block
-        if (mc.playerController.isSpectator) {
-            return block.hasTileEntity(blockState) && mc.theWorld.getTileEntity(blockPos) is IInventory
+        return if (mc.playerController.isSpectator) {
+            block.hasTileEntity(blockState) && mc.theWorld.getTileEntity(blockPos) is IInventory
+        } else {
+            heldItem.canDestroy(block) || heldItem.canPlaceOn(block)
         }
-        return heldItem.canDestroy(block) || heldItem.canPlaceOn(block)
     }
 
     private fun renderBlockBreakOverlay(entity: Entity, partialTicks: Float) {
