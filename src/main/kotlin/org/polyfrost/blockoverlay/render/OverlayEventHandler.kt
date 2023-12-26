@@ -18,7 +18,7 @@ import org.lwjgl.opengl.GL11
 import org.polyfrost.blockoverlay.config.ModConfig
 import net.minecraft.client.renderer.GlStateManager as GL
 
-object Overlay {
+object OverlayEventHandler {
     private const val PADDING = 0.002
 
     @SubscribeEvent
@@ -84,6 +84,7 @@ object Overlay {
         GL.enableAlpha()
         GL11.glPopMatrix()
         renderBlockBreakOverlay(entity, partialTicks)
+        if (ModConfig.shapedOverlay) OverlayRenderer.drawBlockModelMode(block, blockPos, entityX, entityY, entityZ)
     }
 
     private fun getFocusedBlock(): Block? {

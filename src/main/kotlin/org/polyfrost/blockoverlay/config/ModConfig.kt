@@ -37,8 +37,11 @@ object ModConfig : Config(Mod("BlockOverlay", ModType.UTIL_QOL), "${PolyBlockOve
     @Switch(name = "Gradient")
     var gradient = false
 
-    @Checkbox(name = "Draw Overlay", size = 2)
+    @Checkbox(name = "Draw Overlay")
     var overlayColor = false
+
+    @Switch(name = "Shaped Overlay")
+    var shapedOverlay = false
 
     @Color(name = "First Color Overlay")
     var colorFO: OneColor = OneColor(255, 255, 255, 0)

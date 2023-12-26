@@ -5,7 +5,7 @@ import net.minecraftforge.fml.common.Mod
 import net.minecraftforge.fml.common.Mod.*
 import net.minecraftforge.fml.common.event.FMLInitializationEvent
 import org.polyfrost.blockoverlay.config.ModConfig
-import org.polyfrost.blockoverlay.render.Overlay
+import org.polyfrost.blockoverlay.render.OverlayEventHandler
 
 @Mod(
     modid = PolyBlockOverlay.MODID,
@@ -21,6 +21,6 @@ object PolyBlockOverlay {
     @EventHandler
     fun onInit(event: FMLInitializationEvent) {
         ModConfig
-        MinecraftForge.EVENT_BUS.register(Overlay)
+        MinecraftForge.EVENT_BUS.register(OverlayEventHandler)
     }
 }
